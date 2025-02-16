@@ -1,5 +1,6 @@
 package game2048;
 
+import javax.swing.*;
 import java.util.Formatter;
 import java.util.Observable;
 
@@ -113,6 +114,9 @@ public class Model extends Observable {
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
+        board.setViewingPerspective(side);
+        changed = moveUp();
+        board.setViewingPerspective(Side.NORTH);
 
         checkGameOver();
         if (changed) {
@@ -120,6 +124,55 @@ public class Model extends Observable {
         }
         return changed;
     }
+
+    private boolean moveUp() {
+        int size = board.size();
+        boolean changed = false;
+        for (int col = 0; col < size; col += 1) {
+            if (columnUP(col, size - 1)) {
+                changed = true;
+            }
+        }
+
+        return changed;
+    }
+
+    private boolean columnUP(int col, int row) {
+        if (row == 0) {
+            return false;
+        }
+
+        Tile tUp = board.tile(col, row);
+        int tDownRow = row - 1;
+        Tile tDown = board.tile(col, tDownRow);
+        while (tDown == null && tDownRow >= 0) {
+            if (tDownRow == 0) {
+                return false;
+            }
+
+            tDownRow = tDownRow - 1;
+            tDown = board.tile(col, tDownRow);
+        }
+
+        assert tDown != null;
+        if (tUp == null) {
+            board.move(col, row, tDown);
+            columnUP(col, row);
+            return true;
+        } else if (tUp.value() == tDown.value()) {
+            board.move(col, row, tDown);
+            score += board.tile(col, row).value();
+            columnUP(col, row - 1);
+            return true;
+        } else if (tDownRow != row - 1) {
+            board.move(col, row - 1, tDown);
+            columnUP(col, row - 1);
+            return true;
+        } else {
+            return columnUP(col, row - 1);
+        }
+    }
+
 
     /** Checks if the game is over and sets the gameOver variable
      *  appropriately.
@@ -138,6 +191,15 @@ public class Model extends Observable {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+        int size = b.size();
+        for (int col = 0; col < size; col += 1) {
+            for (int row = 0; row < size; row += 1) {
+                Tile currTile = b.tile(col, row);
+                if (currTile == null) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -148,6 +210,15 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        int size = b.size();
+        for (int col = 0; col < size; col += 1) {
+            for (int row = 0; row < size; row += 1) {
+                Tile currTile = b.tile(col, row);
+                if (currTile != null && currTile.value() == MAX_PIECE) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -159,9 +230,76 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        return Model.emptySpaceExists(b) || Model.adjacentSameValExists(b);
+    }
+
+    /**
+     * it adjacent same val exists
+     * @param b current Board
+     * @return true if val same
+     */
+    private static boolean adjacentSameValExists(Board b) {
+        int size = b.size();
+        for (int col = 0; col < size; col += 1) {
+            for (int row = 0; row < size; row += 1 ) {
+                Tile currTile = b.tile(col, row);
+                if (currTile != null && Model.adjacentSameVal(b, currTile.value(), col, row)) {
+                        return true;
+                }
+            }
+        }
+
         return false;
     }
 
+    /**
+     * check if adjacent tiles have the same value
+     * @param b Board
+     * @param val current tile val
+     * @param col current col
+     * @param row current row
+     * @return true if same val exits
+     */
+    private static boolean adjacentSameVal(Board b, int val, int col, int row) {
+        int size = b.size();
+        int adjCol, adjRow;
+        adjCol = col - 1;
+        adjRow = row;
+        if (Model.checkSameVal(b, val, adjCol, adjRow)) {
+            return true;
+        }
+
+        adjCol = col + 1;
+        if (Model.checkSameVal(b, val, adjCol, adjRow)) {
+            return true;
+        }
+
+        adjCol = col;
+        adjRow = row - 1;
+        if (Model.checkSameVal(b, val, adjCol, adjRow)) {
+            return true;
+        }
+
+        adjRow = row + 1;
+        if (Model.checkSameVal(b, val, adjCol, adjRow)) {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /*
+    * check if the tile at col and row the same val
+    * */
+    private static boolean checkSameVal(Board b, int val, int col, int row) {
+        int size = b.size();
+        if (col >= 0 && col < size && row >= 0 && row < size) {
+            Tile currTile = b.tile(col, row);
+            return currTile != null && currTile.value() == val;
+        }
+        return false;
+    }
 
     @Override
      /** Returns the model as a string, used for debugging. */
