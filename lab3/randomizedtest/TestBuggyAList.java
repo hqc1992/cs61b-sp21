@@ -22,7 +22,7 @@ public class TestBuggyAList {
                 int randVal = StdRandom.uniform(0, 100);
                 L.addLast(randVal);
                 bugL.addLast(randVal);
-                System.out.println("addLast(" + randVal + ")");
+//                System.out.println("addLast(" + randVal + ")");
             } else if (operationNumber == 1) {
                 // size
                 int size = L.size();
